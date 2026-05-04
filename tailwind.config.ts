@@ -62,6 +62,31 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xs: "4px",
+        "2xs": "8px",
+        xl2: "16px",
+        pill: "9999px",
+      },
+      fontFamily: {
+        display: ['"Fraunces"', "serif"],
+      },
+      fontWeight: {
+        display: "900",
+        nav: "700",
+      },
+      letterSpacing: {
+        display: "-0.03em",
+        nav: "-0.01em",
+      },
+      spacing: {
+        // 8pt baseline helpers
+        "0.5b": "4px",
+        "1b": "8px",
+        "2b": "16px",
+        "3b": "24px",
+        "4b": "32px",
+        "6b": "48px",
+        "8b": "64px",
       },
       keyframes: {
         "accordion-down": {
