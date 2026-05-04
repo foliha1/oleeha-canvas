@@ -30,6 +30,7 @@ const Stage = () => {
             </span>
           </h1>
         </div>
+        <FloatingNav />
       </div>
     </CenterRectContext.Provider>
   );
