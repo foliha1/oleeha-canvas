@@ -15,13 +15,38 @@ type Obj = {
 };
 
 function randomAngle() {
-  while (true) {
-    const a = Math.random() * Math.PI * 2;
-    const deg = (a * 180) / Math.PI;
-    const mod = deg % 90;
-    if (mod > 15 && mod < 75) return a;
-  }
+  // 20°–70° from each axis, random quadrant
+  const baseDeg = 20 + Math.random() * 50;
+  const quadrant = Math.floor(Math.random() * 4);
+  const deg = baseDeg + quadrant * 90;
+  return (deg * Math.PI) / 180;
 }
+
+/**
+ * Spawn a position around the center, varying quadrant and distance so
+ * objects never start clumped in a corner.
+ */
+function spawnPosition(index: number, total: number, w: number, h: number, vw: number, vh: number) {
+  const cx = vw / 2;
+  const cy = vh / 2;
+  const quadrant = index % 4;
+  const qx = quadrant % 2 === 0 ? -1 : 1;
+  const qy = quadrant < 2 ? -1 : 1;
+  const maxR = Math.min(vw, vh) / 2 - 80;
+  const minR = Math.min(vw, vh) / 6;
+  const r = minR + Math.random() * Math.max(1, maxR - minR);
+  const angle = (Math.random() * Math.PI) / 2; // within quadrant
+  const x = cx + qx * Math.abs(Math.cos(angle)) * r - w / 2;
+  const y = cy + qy * Math.abs(Math.sin(angle)) * r - h / 2;
+  return {
+    x: Math.max(0, Math.min(vw - w, x)),
+    y: Math.max(0, Math.min(vh - h, y)),
+  };
+}
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 type Props = {
   items: { id: string; label: string }[];
@@ -50,19 +75,22 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
 
   // Initialize objects whenever items list identity changes.
   useEffect(() => {
+    if (prefersReducedMotion()) return;
+
     const vw = window.innerWidth;
     const vh = window.innerHeight;
 
-    objectsRef.current = items.map(({ id }) => {
+    objectsRef.current = items.map(({ id }, i) => {
       const el = buttonsRef.current[id];
       const rect = el?.getBoundingClientRect();
       const w = rect?.width ?? 100;
       const h = rect?.height ?? 40;
       const angle = randomAngle();
+      const { x, y } = spawnPosition(i, items.length, w, h, vw, vh);
       return {
         id,
-        x: Math.random() * Math.max(1, vw - w),
-        y: Math.random() * Math.max(1, vh - h),
+        x,
+        y,
         vx: Math.cos(angle) * SPEED,
         vy: Math.sin(angle) * SPEED,
         w,
