@@ -181,35 +181,48 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
         if (o.el) o.el.style.transform = `translate3d(${o.x}px, ${o.y}px, 0)`;
       }
 
-      // Soft separation between floating objects to prevent clumping
+      // Elastic bounce between floating links (using inset collision rects)
       const objs = objectsRef.current;
       for (let i = 0; i < objs.length; i++) {
         for (let j = i + 1; j < objs.length; j++) {
           const a = objs[i];
           const b = objs[j];
-          const ax2 = a.x + a.w;
-          const ay2 = a.y + a.h;
-          const bx2 = b.x + b.w;
-          const by2 = b.y + b.h;
-          if (a.x >= bx2 || ax2 <= b.x || a.y >= by2 || ay2 <= b.y) continue;
-          const acx = a.x + a.w / 2;
-          const acy = a.y + a.h / 2;
-          const bcx = b.x + b.w / 2;
-          const bcy = b.y + b.h / 2;
-          let dx = bcx - acx;
-          let dy = bcy - acy;
-          const len = Math.hypot(dx, dy) || 0.0001;
-          dx /= len;
-          dy /= len;
-          const push = 0.6; // gentle nudge per frame
-          if (a.id !== hovered && !isPaused) {
-            a.x -= dx * push;
-            a.y -= dy * push;
+          const aL = a.x + LINK_INSET;
+          const aT = a.y + LINK_INSET;
+          const aR = a.x + a.w - LINK_INSET;
+          const aB = a.y + a.h - LINK_INSET;
+          const bL = b.x + LINK_INSET;
+          const bT = b.y + LINK_INSET;
+          const bR = b.x + b.w - LINK_INSET;
+          const bB = b.y + b.h - LINK_INSET;
+          if (aL >= bR || aR <= bL || aT >= bB || aB <= bT) continue;
+
+          const acx = (aL + aR) / 2;
+          const acy = (aT + aB) / 2;
+          const bcx = (bL + bR) / 2;
+          const bcy = (bT + bB) / 2;
+          let nx = bcx - acx;
+          let ny = bcy - acy;
+          const dist = Math.hypot(nx, ny) || 0.0001;
+          nx /= dist;
+          ny /= dist;
+
+          const aImmovable = isPaused || a.id === hovered;
+          const bImmovable = isPaused || b.id === hovered;
+
+          const relVel = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+          if (relVel < 0) {
+            if (!aImmovable) { a.vx += relVel * nx; a.vy += relVel * ny; }
+            if (!bImmovable) { b.vx -= relVel * nx; b.vy -= relVel * ny; }
           }
-          if (b.id !== hovered && !isPaused) {
-            b.x += dx * push;
-            b.y += dy * push;
-          }
+
+          // Positional correction — push apart by half the overlap along n
+          const overlapX = Math.min(aR - bL, bR - aL);
+          const overlapY = Math.min(aB - bT, bB - aT);
+          const overlap = Math.min(overlapX, overlapY);
+          const half = overlap / 2;
+          if (!aImmovable) { a.x -= nx * half; a.y -= ny * half; }
+          if (!bImmovable) { b.x += nx * half; b.y += ny * half; }
         }
       }
 
