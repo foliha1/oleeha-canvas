@@ -166,28 +166,73 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
         if (o.el) o.el.style.transform = `translate3d(${o.x}px, ${o.y}px, 0)`;
       }
 
+      // Soft separation between floating objects to prevent clumping
+      const objs = objectsRef.current;
+      for (let i = 0; i < objs.length; i++) {
+        for (let j = i + 1; j < objs.length; j++) {
+          const a = objs[i];
+          const b = objs[j];
+          const ax2 = a.x + a.w;
+          const ay2 = a.y + a.h;
+          const bx2 = b.x + b.w;
+          const by2 = b.y + b.h;
+          if (a.x >= bx2 || ax2 <= b.x || a.y >= by2 || ay2 <= b.y) continue;
+          const acx = a.x + a.w / 2;
+          const acy = a.y + a.h / 2;
+          const bcx = b.x + b.w / 2;
+          const bcy = b.y + b.h / 2;
+          let dx = bcx - acx;
+          let dy = bcy - acy;
+          const len = Math.hypot(dx, dy) || 0.0001;
+          dx /= len;
+          dy /= len;
+          const push = 0.6; // gentle nudge per frame
+          if (a.id !== hovered && !isPaused) {
+            a.x -= dx * push;
+            a.y -= dy * push;
+          }
+          if (b.id !== hovered && !isPaused) {
+            b.x += dx * push;
+            b.y += dy * push;
+          }
+        }
+      }
+
       raf = requestAnimationFrame(tick);
     };
 
-    raf = requestAnimationFrame(tick);
+    const start = () => {
+      if (raf) return;
+      last = performance.now();
+      raf = requestAnimationFrame(tick);
+    };
+    const stop = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+    };
 
-    const resetClock = () => { last = performance.now(); };
-    const onVis = () => { if (document.visibilityState === "visible") resetClock(); };
+    if (!document.hidden) start();
+
+    const onVis = () => {
+      if (document.hidden) stop();
+      else start();
+    };
     const onResize = () => {
       const VW = window.innerWidth;
       const VH = window.innerHeight;
       for (const o of objectsRef.current) {
-        o.x = Math.min(o.x, VW - o.w);
-        o.y = Math.min(o.y, VH - o.h);
+        const r = o.el?.getBoundingClientRect();
+        if (r) { o.w = r.width; o.h = r.height; }
+        o.x = Math.max(0, Math.min(o.x, VW - o.w));
+        o.y = Math.max(0, Math.min(o.y, VH - o.h));
       }
+      // Force fresh center rect read on next tick (centerRef getBoundingClientRect is read each frame).
     };
-    window.addEventListener("focus", resetClock);
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener("resize", onResize);
 
     return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("focus", resetClock);
+      stop();
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("resize", onResize);
     };
@@ -205,6 +250,7 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
           <button
             key={id}
             ref={(el) => { buttonsRef.current[id] = el; }}
+            aria-label={`Open ${label}`}
             onPointerEnter={() => setHover(id)}
             onPointerLeave={() => { if (hoveredRef.current === id) setHover(null); }}
             onClick={(e) => {
