@@ -23,7 +23,12 @@ const Stage = () => {
   const [flying, setFlying] = useState<FlyingItem | null>(null);
   const [phase, setPhase] = useState<"idle" | "leaving" | "entering">("idle");
   const [pendingPath, setPendingPath] = useState<string[] | null>(null);
-  const [mode, setMode] = useState<Mode>("interactive");
+  const [mode, setMode] = useState<Mode>(() =>
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+      ? "list"
+      : "interactive"
+  );
 
   const currentId = path[path.length - 1];
   const parentId = path.length > 1 ? path[path.length - 2] : null;

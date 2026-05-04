@@ -8,6 +8,8 @@ type Props = {
 const ViewToggle = ({ mode, onChange }: Props) => {
   return (
     <div
+      role="group"
+      aria-label="View mode"
       className="fixed z-50 flex items-center justify-between"
       style={{
         top: 24,
@@ -21,7 +23,9 @@ const ViewToggle = ({ mode, onChange }: Props) => {
       }}
     >
       <button
+        type="button"
         aria-label="Interactive view"
+        aria-pressed={mode === "interactive"}
         onClick={() => onChange("interactive")}
         className="flex items-center justify-center cursor-pointer"
         style={{
@@ -42,7 +46,9 @@ const ViewToggle = ({ mode, onChange }: Props) => {
         </svg>
       </button>
       <button
+        type="button"
         aria-label="List view"
+        aria-pressed={mode === "list"}
         onClick={() => onChange("list")}
         className="flex items-center justify-center cursor-pointer"
         style={{
