@@ -97,49 +97,14 @@ const Stage = () => {
       <div className="relative h-screen w-screen overflow-hidden bg-background">
         {/* Static centered wordmark */}
         <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <div style={{ position: "relative" }}>
-            {/* Outgoing label fades out during leaving */}
-            {phase === "leaving" && pendingPath && pendingPath[pendingPath.length - 1] !== currentId && (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  opacity: 0,
-                  transition: `opacity ${TRANSITION_MS}ms ease-in-out`,
-                }}
-              >
-                <Wordmark label={currentNode.label} />
-              </div>
-            )}
-            {/* Live ref'd wordmark = the destination label */}
-            <Wordmark
-              ref={wordmarkRef}
-              label={
-                phase === "leaving" && pendingPath
-                  ? NODES[pendingPath[pendingPath.length - 1]].label
-                  : currentNode.label
-              }
-              style={{
-                opacity: phase === "leaving" ? 0 : 1,
-                transition: `opacity ${TRANSITION_MS}ms ease-in-out`,
-              }}
-            />
-            {/* Incoming label fades in during leaving (visual layer) */}
-            {phase === "leaving" && pendingPath && (
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  opacity: 1,
-                  transition: `opacity ${TRANSITION_MS}ms ease-in-out`,
-                  pointerEvents: "none",
-                }}
-              >
-                {/* The above ref'd wordmark already shows new label with opacity tween from 0→1 via the leaving block.
-                    Keeping this empty placeholder for clarity; actual crossfade handled on the ref'd element. */}
-              </div>
-            )}
-          </div>
+          <Wordmark
+            ref={wordmarkRef}
+            label={currentNode.label}
+            style={{
+              opacity: phase === "leaving" ? 0 : 1,
+              transition: `opacity ${TRANSITION_MS}ms ease-in-out`,
+            }}
+          />
         </div>
 
         {/* Floating nav (remounts on path change for clean enter) */}
