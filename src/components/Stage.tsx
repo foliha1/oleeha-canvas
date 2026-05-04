@@ -2,7 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CenterRectContext } from "@/context/CenterRectContext";
 import { NODES } from "@/data/nodes";
 import FloatingNav from "./FloatingNav";
+import ListView from "./ListView";
+import ViewToggle from "./ViewToggle";
 import Wordmark from "./Wordmark";
+
+type Mode = "interactive" | "list";
 
 const TRANSITION_MS = 500;
 
@@ -19,6 +23,7 @@ const Stage = () => {
   const [flying, setFlying] = useState<FlyingItem | null>(null);
   const [phase, setPhase] = useState<"idle" | "leaving" | "entering">("idle");
   const [pendingPath, setPendingPath] = useState<string[] | null>(null);
+  const [mode, setMode] = useState<Mode>("interactive");
 
   const currentId = path[path.length - 1];
   const parentId = path.length > 1 ? path[path.length - 2] : null;
@@ -90,49 +95,55 @@ const Stage = () => {
   const navOpacity = phase === "leaving" ? 0 : phase === "entering" ? 0 : 1;
   // Force a fade-in by mounting "entering" with opacity 0 then bumping to 1 via key+effect.
   // Simpler: use a key to remount FloatingNav on path change so it gets opacity 0→1 from initial transition.
-  const navKey = path.join("/");
+  // Remount on path or mode change so the floating layer gets a fresh layout.
+  const navKey = `${mode}/${path.join("/")}`;
 
   return (
     <CenterRectContext.Provider value={wordmarkRef}>
       <div className="relative h-screen w-screen overflow-hidden bg-background">
-        {/* Static centered wordmark */}
-        <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <Wordmark
-            ref={wordmarkRef}
-            label={currentNode.label}
-            style={{
-              opacity: phase === "leaving" ? 0 : 1,
-              transition: `opacity ${TRANSITION_MS}ms ease-in-out`,
-            }}
-          />
-        </div>
+        <ViewToggle mode={mode} onChange={setMode} />
 
-        {/* Floating nav (remounts on path change for clean enter) */}
-        <FloatingNav
-          key={navKey}
-          items={items}
-          onItemClick={handleClick}
-          opacity={navOpacity}
-          paused={phase !== "idle"}
-        />
+        {mode === "interactive" ? (
+          <>
+            <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <Wordmark
+                ref={wordmarkRef}
+                label={currentNode.label}
+                style={{
+                  opacity: phase === "leaving" ? 0 : 1,
+                  transition: `opacity ${TRANSITION_MS}ms ease-in-out`,
+                }}
+              />
+            </div>
 
-        {/* Flying ghost during leaving */}
-        {phase === "leaving" && flying && (
-          <div
-            ref={flyingRef}
-            className="pointer-events-none absolute left-0 top-0 font-display"
-            style={{
-              fontWeight: 700,
-              fontSize: 28,
-              letterSpacing: "-0.01em",
-              color: "#0A0A0A",
-              padding: "8px 12px",
-              transformOrigin: "center",
-              willChange: "transform, opacity",
-            }}
-          >
-            {flying.label}
-          </div>
+            <FloatingNav
+              key={navKey}
+              items={items}
+              onItemClick={handleClick}
+              opacity={phase === "leaving" ? 0 : 1}
+              paused={phase !== "idle"}
+            />
+
+            {phase === "leaving" && flying && (
+              <div
+                ref={flyingRef}
+                className="pointer-events-none absolute left-0 top-0 font-display"
+                style={{
+                  fontWeight: 700,
+                  fontSize: 28,
+                  letterSpacing: "-0.01em",
+                  color: "#0A0A0A",
+                  padding: "8px 12px",
+                  transformOrigin: "center",
+                  willChange: "transform, opacity",
+                }}
+              >
+                {flying.label}
+              </div>
+            )}
+          </>
+        ) : (
+          <ListView path={path} onNavigate={setPath} />
         )}
       </div>
     </CenterRectContext.Provider>
