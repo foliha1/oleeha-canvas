@@ -6,7 +6,7 @@ type Props = {
   className?: string;
 };
 
-const DISPLAY_STYLE: CSSProperties = {
+const TEXT_STYLE: CSSProperties = {
   fontWeight: 900,
   fontSize: "clamp(48px, 9vw, 160px)",
   letterSpacing: "-0.03em",
@@ -15,19 +15,28 @@ const DISPLAY_STYLE: CSSProperties = {
   whiteSpace: "nowrap",
 };
 
+const IMG_STYLE: CSSProperties = {
+  fontWeight: 900,
+  fontSize: "clamp(48px, 9vw, 160px)",
+  letterSpacing: "-0.03em",
+  color: "#0A0A0A",
+};
+
 const Wordmark = forwardRef<HTMLHeadingElement, Props>(({ label, style, className }, ref) => {
   const isRoot = label === "oleeha&co";
   return (
     <h1
       ref={ref}
       className={`font-display ${className ?? ""}`}
-      style={{ ...DISPLAY_STYLE, ...style }}
+      style={{ ...(isRoot ? IMG_STYLE : TEXT_STYLE), ...style }}
     >
       {isRoot ? (
-        <>
-          <span>oleeha</span>
-          <span style={{ color: "transparent", WebkitTextStroke: "2px #0A0A0A" }}>&amp;co</span>
-        </>
+        <img
+          src="/oleeha-co-logo.svg"
+          alt="oleeha & co"
+          style={{ height: "clamp(40px, 7vw, 130px)", width: "auto", display: "block" }}
+          draggable={false}
+        />
       ) : (
         <span>{label}</span>
       )}
