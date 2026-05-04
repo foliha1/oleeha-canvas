@@ -1,10 +1,10 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { CenterRectContext } from "@/context/CenterRectContext";
 
-const LABELS = ["projects", "say hey", "ideas", "about"] as const;
-const SPEED = 90; // px/s
+const SPEED = 90;
 
 type Obj = {
+  id: string;
   x: number;
   y: number;
   vx: number;
@@ -23,31 +23,46 @@ function randomAngle() {
   }
 }
 
-const FloatingNav = () => {
-  const centerRef = useContext(CenterRectContext);
-  const buttonsRef = useRef<(HTMLButtonElement | null)[]>([]);
-  const objectsRef = useRef<Obj[]>([]);
-  const hoveredRef = useRef<number | null>(null);
-  const [hoveredId, setHoveredId] = useState<number | null>(null);
+type Props = {
+  items: { id: string; label: string }[];
+  onItemClick: (id: string, rect: DOMRect) => void;
+  /** Item id currently flying to center — render as invisible placeholder. */
+  hiddenId?: string | null;
+  /** Opacity of the whole layer (used for enter/leave fades). */
+  opacity?: number;
+  /** Pause all motion (used while leaving so positions don't drift). */
+  paused?: boolean;
+};
 
-  const setHover = (i: number | null) => {
-    hoveredRef.current = i;
-    setHoveredId(i);
+const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false }: Props) => {
+  const centerRef = useContext(CenterRectContext);
+  const buttonsRef = useRef<Record<string, HTMLButtonElement | null>>({});
+  const objectsRef = useRef<Obj[]>([]);
+  const hoveredRef = useRef<string | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
+
+  const setHover = (id: string | null) => {
+    hoveredRef.current = id;
+    setHoveredId(id);
   };
 
+  // Initialize objects whenever items list identity changes.
   useEffect(() => {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
 
-    objectsRef.current = LABELS.map((_, i) => {
-      const el = buttonsRef.current[i];
+    objectsRef.current = items.map(({ id }) => {
+      const el = buttonsRef.current[id];
       const rect = el?.getBoundingClientRect();
       const w = rect?.width ?? 100;
       const h = rect?.height ?? 40;
       const angle = randomAngle();
       return {
-        x: Math.random() * (vw - w),
-        y: Math.random() * (vh - h),
+        id,
+        x: Math.random() * Math.max(1, vw - w),
+        y: Math.random() * Math.max(1, vh - h),
         vx: Math.cos(angle) * SPEED,
         vy: Math.sin(angle) * SPEED,
         w,
@@ -59,32 +74,33 @@ const FloatingNav = () => {
     let raf = 0;
     let last = performance.now();
 
-    const resolveCollision = (o: Obj, b: DOMRect | { left: number; top: number; right: number; bottom: number }) => {
-      const ax1 = o.x;
-      const ay1 = o.y;
+    const resolve = (
+      o: Obj,
+      b: { left: number; top: number; right: number; bottom: number }
+    ) => {
       const ax2 = o.x + o.w;
       const ay2 = o.y + o.h;
-      if (ax1 >= b.right || ax2 <= b.left || ay1 >= b.bottom || ay2 <= b.top) return;
-      const overlapLeft = ax2 - b.left;
-      const overlapRight = b.right - ax1;
-      const overlapTop = ay2 - b.top;
-      const overlapBottom = b.bottom - ay1;
-      const minX = Math.min(overlapLeft, overlapRight);
-      const minY = Math.min(overlapTop, overlapBottom);
+      if (o.x >= b.right || ax2 <= b.left || o.y >= b.bottom || ay2 <= b.top) return;
+      const oL = ax2 - b.left;
+      const oR = b.right - o.x;
+      const oT = ay2 - b.top;
+      const oB = b.bottom - o.y;
+      const minX = Math.min(oL, oR);
+      const minY = Math.min(oT, oB);
       if (minX < minY) {
-        if (overlapLeft < overlapRight) {
-          o.x -= overlapLeft;
+        if (oL < oR) {
+          o.x -= oL;
           o.vx = -Math.abs(o.vx);
         } else {
-          o.x += overlapRight;
+          o.x += oR;
           o.vx = Math.abs(o.vx);
         }
       } else {
-        if (overlapTop < overlapBottom) {
-          o.y -= overlapTop;
+        if (oT < oB) {
+          o.y -= oT;
           o.vy = -Math.abs(o.vy);
         } else {
-          o.y += overlapBottom;
+          o.y += oB;
           o.vy = Math.abs(o.vy);
         }
       }
@@ -97,54 +113,29 @@ const FloatingNav = () => {
       const VH = window.innerHeight;
       const centerRect = centerRef?.current?.getBoundingClientRect() ?? null;
       const hovered = hoveredRef.current;
+      const isPaused = pausedRef.current;
 
-      // refresh hovered object size + build hovered obstacle rect
       let hoveredRect: { left: number; top: number; right: number; bottom: number } | null = null;
-      if (hovered != null) {
-        const o = objectsRef.current[hovered];
-        if (o) {
-          // refresh size in case scale changed layout — use untransformed measurement
-          hoveredRect = {
-            left: o.x,
-            top: o.y,
-            right: o.x + o.w,
-            bottom: o.y + o.h,
-          };
-        }
+      if (hovered) {
+        const o = objectsRef.current.find((x) => x.id === hovered);
+        if (o) hoveredRect = { left: o.x, top: o.y, right: o.x + o.w, bottom: o.y + o.h };
       }
 
-      for (let i = 0; i < objectsRef.current.length; i++) {
-        const o = objectsRef.current[i];
-        if (i === hovered) {
-          // skip movement, preserve velocity, still update transform
-          if (o.el) o.el.style.transform = `translate3d(${o.x}px, ${o.y}px, 0)`;
-          continue;
-        }
+      for (const o of objectsRef.current) {
+        const skipMotion = isPaused || o.id === hovered;
+        if (!skipMotion) {
+          o.x += o.vx * dt;
+          o.y += o.vy * dt;
 
-        o.x += o.vx * dt;
-        o.y += o.vy * dt;
+          if (o.x <= 0) { o.x = 0; o.vx = Math.abs(o.vx); }
+          else if (o.x + o.w >= VW) { o.x = VW - o.w; o.vx = -Math.abs(o.vx); }
+          if (o.y <= 0) { o.y = 0; o.vy = Math.abs(o.vy); }
+          else if (o.y + o.h >= VH) { o.y = VH - o.h; o.vy = -Math.abs(o.vy); }
 
-        if (o.x <= 0) {
-          o.x = 0;
-          o.vx = Math.abs(o.vx);
-        } else if (o.x + o.w >= VW) {
-          o.x = VW - o.w;
-          o.vx = -Math.abs(o.vx);
+          if (centerRect) resolve(o, centerRect);
+          if (hoveredRect && o.id !== hovered) resolve(o, hoveredRect);
         }
-        if (o.y <= 0) {
-          o.y = 0;
-          o.vy = Math.abs(o.vy);
-        } else if (o.y + o.h >= VH) {
-          o.y = VH - o.h;
-          o.vy = -Math.abs(o.vy);
-        }
-
-        if (centerRect) resolveCollision(o, centerRect);
-        if (hoveredRect) resolveCollision(o, hoveredRect);
-
-        if (o.el) {
-          o.el.style.transform = `translate3d(${o.x}px, ${o.y}px, 0)`;
-        }
+        if (o.el) o.el.style.transform = `translate3d(${o.x}px, ${o.y}px, 0)`;
       }
 
       raf = requestAnimationFrame(tick);
@@ -152,12 +143,8 @@ const FloatingNav = () => {
 
     raf = requestAnimationFrame(tick);
 
-    const resetClock = () => {
-      last = performance.now();
-    };
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") resetClock();
-    };
+    const resetClock = () => { last = performance.now(); };
+    const onVis = () => { if (document.visibilityState === "visible") resetClock(); };
     const onResize = () => {
       const VW = window.innerWidth;
       const VH = window.innerHeight;
@@ -166,29 +153,36 @@ const FloatingNav = () => {
         o.y = Math.min(o.y, VH - o.h);
       }
     };
-
     window.addEventListener("focus", resetClock);
-    document.addEventListener("visibilitychange", onVisibility);
+    document.addEventListener("visibilitychange", onVis);
     window.addEventListener("resize", onResize);
 
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("focus", resetClock);
-      document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("resize", onResize);
     };
-  }, [centerRef]);
+  }, [items, centerRef]);
 
   return (
-    <div className="absolute inset-0">
-      {LABELS.map((label, i) => {
-        const isHovered = hoveredId === i;
+    <div
+      className="absolute inset-0"
+      style={{ opacity, transition: "opacity 300ms ease-out", pointerEvents: paused ? "none" : "auto" }}
+    >
+      {items.map(({ id, label }) => {
+        const isHovered = hoveredId === id;
+        const isHidden = hiddenId === id;
         return (
           <button
-            key={label}
-            ref={(el) => (buttonsRef.current[i] = el)}
-            onPointerEnter={() => setHover(i)}
-            onPointerLeave={() => setHover(hoveredRef.current === i ? null : hoveredRef.current)}
+            key={id}
+            ref={(el) => { buttonsRef.current[id] = el; }}
+            onPointerEnter={() => setHover(id)}
+            onPointerLeave={() => { if (hoveredRef.current === id) setHover(null); }}
+            onClick={(e) => {
+              const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+              onItemClick(id, rect);
+            }}
             className="absolute left-0 top-0 cursor-pointer font-display"
             style={{
               fontWeight: 700,
@@ -200,8 +194,9 @@ const FloatingNav = () => {
               background: "transparent",
               border: 0,
               transformOrigin: "center",
-              transition: "scale 200ms ease-out, text-decoration-color 200ms ease-out",
+              transition: "scale 200ms ease-out, opacity 200ms ease-out",
               scale: isHovered ? "1.08" : "1",
+              opacity: isHidden ? 0 : 1,
               textDecoration: isHovered ? "underline" : "none",
               textDecorationThickness: "2px",
               textDecorationColor: "#0A0A0A",
