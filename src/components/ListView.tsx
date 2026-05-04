@@ -46,10 +46,12 @@ const ListView = ({ path, onNavigate }: Props) => {
           }}
         >
           {currentId === "root" ? (
-            <>
-              <span>oleeha</span>
-              <span style={{ color: "transparent", WebkitTextStroke: "2px #0A0A0A" }}>&amp;co</span>
-            </>
+            <img
+              src="/oleeha-co-logo.svg"
+              alt="oleeha & co"
+              style={{ height: "clamp(40px, 7vw, 130px)", width: "auto", display: "block" }}
+              draggable={false}
+            />
           ) : (
             node.label
           )}
