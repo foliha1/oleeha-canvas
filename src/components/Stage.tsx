@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { CenterRectContext } from "@/context/CenterRectContext";
+import FloatingNav from "./FloatingNav";
 
 const Stage = () => {
   const wordmarkRef = useRef<HTMLHeadingElement>(null);
