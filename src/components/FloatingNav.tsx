@@ -2,6 +2,8 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { CenterRectContext } from "@/context/CenterRectContext";
 
 const SPEED = 55;
+const LINK_INSET = 10;
+const WORDMARK_INSET = 14;
 
 type Obj = {
   id: string;
@@ -155,12 +157,25 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
           o.x += o.vx * dt;
           o.y += o.vy * dt;
 
-          if (o.x <= 0) { o.x = 0; o.vx = Math.abs(o.vx); }
-          else if (o.x + o.w >= VW) { o.x = VW - o.w; o.vx = -Math.abs(o.vx); }
-          if (o.y <= 0) { o.y = 0; o.vy = Math.abs(o.vy); }
-          else if (o.y + o.h >= VH) { o.y = VH - o.h; o.vy = -Math.abs(o.vy); }
+          // Inset collision rect — bounce closer to the visible glyphs.
+          const insetL = o.x + LINK_INSET;
+          const insetT = o.y + LINK_INSET;
+          const insetR = o.x + o.w - LINK_INSET;
+          const insetB = o.y + o.h - LINK_INSET;
 
-          if (centerRect) resolve(o, centerRect);
+          if (insetL <= 0) { o.x = -LINK_INSET; o.vx = Math.abs(o.vx); }
+          else if (insetR >= VW) { o.x = VW - o.w + LINK_INSET; o.vx = -Math.abs(o.vx); }
+          if (insetT <= 0) { o.y = -LINK_INSET; o.vy = Math.abs(o.vy); }
+          else if (insetB >= VH) { o.y = VH - o.h + LINK_INSET; o.vy = -Math.abs(o.vy); }
+
+          if (centerRect) {
+            resolve(o, {
+              left: centerRect.left + WORDMARK_INSET,
+              top: centerRect.top + WORDMARK_INSET,
+              right: centerRect.right - WORDMARK_INSET,
+              bottom: centerRect.bottom - WORDMARK_INSET,
+            });
+          }
           if (hoveredRect && o.id !== hovered) resolve(o, hoveredRect);
         }
         if (o.el) o.el.style.transform = `translate3d(${o.x}px, ${o.y}px, 0)`;
