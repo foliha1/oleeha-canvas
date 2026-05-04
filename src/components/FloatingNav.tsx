@@ -188,7 +188,7 @@ const FloatingNav = () => {
             key={label}
             ref={(el) => (buttonsRef.current[i] = el)}
             onPointerEnter={() => setHover(i)}
-            onPointerLeave={() => setHover((curr) => (curr === i ? null : curr) as never)}
+            onPointerLeave={() => setHover(hoveredRef.current === i ? null : hoveredRef.current)}
             className="absolute left-0 top-0 cursor-pointer font-display"
             style={{
               fontWeight: 700,
