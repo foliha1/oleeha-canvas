@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { CenterRectContext } from "@/context/CenterRectContext";
 
 const LABELS = ["projects", "say hey", "ideas", "about"] as const;
@@ -15,7 +15,6 @@ type Obj = {
 };
 
 function randomAngle() {
-  // avoid axis-aligned angles (0, 90, 180, 270)
   while (true) {
     const a = Math.random() * Math.PI * 2;
     const deg = (a * 180) / Math.PI;
@@ -26,9 +25,15 @@ function randomAngle() {
 
 const FloatingNav = () => {
   const centerRef = useContext(CenterRectContext);
-  const containerRef = useRef<HTMLDivElement>(null);
   const buttonsRef = useRef<(HTMLButtonElement | null)[]>([]);
   const objectsRef = useRef<Obj[]>([]);
+  const hoveredRef = useRef<number | null>(null);
+  const [hoveredId, setHoveredId] = useState<number | null>(null);
+
+  const setHover = (i: number | null) => {
+    hoveredRef.current = i;
+    setHoveredId(i);
+  };
 
   useEffect(() => {
     const vw = window.innerWidth;
@@ -54,18 +59,71 @@ const FloatingNav = () => {
     let raf = 0;
     let last = performance.now();
 
+    const resolveCollision = (o: Obj, b: DOMRect | { left: number; top: number; right: number; bottom: number }) => {
+      const ax1 = o.x;
+      const ay1 = o.y;
+      const ax2 = o.x + o.w;
+      const ay2 = o.y + o.h;
+      if (ax1 >= b.right || ax2 <= b.left || ay1 >= b.bottom || ay2 <= b.top) return;
+      const overlapLeft = ax2 - b.left;
+      const overlapRight = b.right - ax1;
+      const overlapTop = ay2 - b.top;
+      const overlapBottom = b.bottom - ay1;
+      const minX = Math.min(overlapLeft, overlapRight);
+      const minY = Math.min(overlapTop, overlapBottom);
+      if (minX < minY) {
+        if (overlapLeft < overlapRight) {
+          o.x -= overlapLeft;
+          o.vx = -Math.abs(o.vx);
+        } else {
+          o.x += overlapRight;
+          o.vx = Math.abs(o.vx);
+        }
+      } else {
+        if (overlapTop < overlapBottom) {
+          o.y -= overlapTop;
+          o.vy = -Math.abs(o.vy);
+        } else {
+          o.y += overlapBottom;
+          o.vy = Math.abs(o.vy);
+        }
+      }
+    };
+
     const tick = (now: number) => {
-      const dt = (now - last) / 1000;
+      const dt = Math.min((now - last) / 1000, 1 / 30);
       last = now;
       const VW = window.innerWidth;
       const VH = window.innerHeight;
-      const centerRect = centerRef?.current?.getBoundingClientRect();
+      const centerRect = centerRef?.current?.getBoundingClientRect() ?? null;
+      const hovered = hoveredRef.current;
 
-      for (const o of objectsRef.current) {
+      // refresh hovered object size + build hovered obstacle rect
+      let hoveredRect: { left: number; top: number; right: number; bottom: number } | null = null;
+      if (hovered != null) {
+        const o = objectsRef.current[hovered];
+        if (o) {
+          // refresh size in case scale changed layout — use untransformed measurement
+          hoveredRect = {
+            left: o.x,
+            top: o.y,
+            right: o.x + o.w,
+            bottom: o.y + o.h,
+          };
+        }
+      }
+
+      for (let i = 0; i < objectsRef.current.length; i++) {
+        const o = objectsRef.current[i];
+        if (i === hovered) {
+          // skip movement, preserve velocity, still update transform
+          if (o.el) o.el.style.transform = `translate3d(${o.x}px, ${o.y}px, 0)`;
+          continue;
+        }
+
         o.x += o.vx * dt;
         o.y += o.vy * dt;
 
-        // Edge collisions
         if (o.x <= 0) {
           o.x = 0;
           o.vx = Math.abs(o.vx);
@@ -81,45 +139,8 @@ const FloatingNav = () => {
           o.vy = -Math.abs(o.vy);
         }
 
-        // Center collision (AABB)
-        if (centerRect) {
-          const ax1 = o.x;
-          const ay1 = o.y;
-          const ax2 = o.x + o.w;
-          const ay2 = o.y + o.h;
-          const bx1 = centerRect.left;
-          const by1 = centerRect.top;
-          const bx2 = centerRect.right;
-          const by2 = centerRect.bottom;
-
-          if (ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1) {
-            // overlap distances on each side
-            const overlapLeft = ax2 - bx1; // push left
-            const overlapRight = bx2 - ax1; // push right
-            const overlapTop = ay2 - by1; // push up
-            const overlapBottom = by2 - ay1; // push down
-            const minX = Math.min(overlapLeft, overlapRight);
-            const minY = Math.min(overlapTop, overlapBottom);
-
-            if (minX < minY) {
-              if (overlapLeft < overlapRight) {
-                o.x -= overlapLeft;
-                o.vx = -Math.abs(o.vx);
-              } else {
-                o.x += overlapRight;
-                o.vx = Math.abs(o.vx);
-              }
-            } else {
-              if (overlapTop < overlapBottom) {
-                o.y -= overlapTop;
-                o.vy = -Math.abs(o.vy);
-              } else {
-                o.y += overlapBottom;
-                o.vy = Math.abs(o.vy);
-              }
-            }
-          }
-        }
+        if (centerRect) resolveCollision(o, centerRect);
+        if (hoveredRect) resolveCollision(o, hoveredRect);
 
         if (o.el) {
           o.el.style.transform = `translate3d(${o.x}px, ${o.y}px, 0)`;
@@ -131,7 +152,13 @@ const FloatingNav = () => {
 
     raf = requestAnimationFrame(tick);
 
-    const handleResize = () => {
+    const resetClock = () => {
+      last = performance.now();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") resetClock();
+    };
+    const onResize = () => {
       const VW = window.innerWidth;
       const VH = window.innerHeight;
       for (const o of objectsRef.current) {
@@ -139,35 +166,52 @@ const FloatingNav = () => {
         o.y = Math.min(o.y, VH - o.h);
       }
     };
-    window.addEventListener("resize", handleResize);
+
+    window.addEventListener("focus", resetClock);
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("resize", onResize);
 
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("focus", resetClock);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("resize", onResize);
     };
   }, [centerRef]);
 
   return (
-    <div ref={containerRef} className="absolute inset-0">
-      {LABELS.map((label, i) => (
-        <button
-          key={label}
-          ref={(el) => (buttonsRef.current[i] = el)}
-          className="absolute left-0 top-0 cursor-pointer font-display"
-          style={{
-            fontWeight: 700,
-            fontSize: 28,
-            letterSpacing: "-0.01em",
-            color: "#0A0A0A",
-            padding: "8px 12px",
-            transform: "translate3d(-9999px, -9999px, 0)",
-            background: "transparent",
-            border: 0,
-          }}
-        >
-          {label}
-        </button>
-      ))}
+    <div className="absolute inset-0">
+      {LABELS.map((label, i) => {
+        const isHovered = hoveredId === i;
+        return (
+          <button
+            key={label}
+            ref={(el) => (buttonsRef.current[i] = el)}
+            onPointerEnter={() => setHover(i)}
+            onPointerLeave={() => setHover((curr) => (curr === i ? null : curr) as never)}
+            className="absolute left-0 top-0 cursor-pointer font-display"
+            style={{
+              fontWeight: 700,
+              fontSize: 28,
+              letterSpacing: "-0.01em",
+              color: "#0A0A0A",
+              padding: "8px 12px",
+              transform: "translate3d(-9999px, -9999px, 0)",
+              background: "transparent",
+              border: 0,
+              transformOrigin: "center",
+              transition: "scale 200ms ease-out, text-decoration-color 200ms ease-out",
+              scale: isHovered ? "1.08" : "1",
+              textDecoration: isHovered ? "underline" : "none",
+              textDecorationThickness: "2px",
+              textDecorationColor: "#0A0A0A",
+              textUnderlineOffset: "6px",
+            }}
+          >
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 };
