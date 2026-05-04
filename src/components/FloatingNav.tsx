@@ -59,9 +59,11 @@ type Props = {
   opacity?: number;
   /** Pause all motion (used while leaving so positions don't drift). */
   paused?: boolean;
+  /** Called when a floating object collides with the center wordmark. */
+  onCenterHit?: () => void;
 };
 
-const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false }: Props) => {
+const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false, onCenterHit }: Props) => {
   const centerRef = useContext(CenterRectContext);
   const buttonsRef = useRef<Record<string, HTMLButtonElement | null>>({});
   const objectsRef = useRef<Obj[]>([]);
@@ -69,6 +71,8 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
+  const onCenterHitRef = useRef(onCenterHit);
+  onCenterHitRef.current = onCenterHit;
 
   const setHover = (id: string | null) => {
     hoveredRef.current = id;
@@ -106,11 +110,13 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
 
     const resolve = (
       o: Obj,
-      b: { left: number; top: number; right: number; bottom: number }
+      b: { left: number; top: number; right: number; bottom: number },
+      onHit?: () => void
     ) => {
       const ax2 = o.x + o.w;
       const ay2 = o.y + o.h;
       if (o.x >= b.right || ax2 <= b.left || o.y >= b.bottom || ay2 <= b.top) return;
+      onHit?.();
       const oL = ax2 - b.left;
       const oR = b.right - o.x;
       const oT = ay2 - b.top;
@@ -174,7 +180,7 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
               top: centerRect.top + WORDMARK_INSET,
               right: centerRect.right - WORDMARK_INSET,
               bottom: centerRect.bottom - WORDMARK_INSET,
-            });
+            }, () => onCenterHitRef.current?.());
           }
           if (hoveredRect && o.id !== hovered) resolve(o, hoveredRect);
         }

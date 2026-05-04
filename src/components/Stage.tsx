@@ -23,6 +23,7 @@ const Stage = () => {
   const [flying, setFlying] = useState<FlyingItem | null>(null);
   const [phase, setPhase] = useState<"idle" | "leaving" | "entering">("idle");
   const [pendingPath, setPendingPath] = useState<string[] | null>(null);
+  const [hitCount, setHitCount] = useState(0);
   const [mode, setMode] = useState<Mode>(() =>
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
@@ -114,6 +115,7 @@ const Stage = () => {
               <Wordmark
                 ref={wordmarkRef}
                 label={currentNode.label}
+                flashSignal={hitCount}
                 style={{
                   opacity: phase === "leaving" ? 0 : 1,
                   transition: `opacity ${TRANSITION_MS}ms ease-in-out`,
@@ -127,6 +129,7 @@ const Stage = () => {
               onItemClick={handleClick}
               opacity={phase === "leaving" ? 0 : 1}
               paused={phase !== "idle"}
+              onCenterHit={() => setHitCount((c) => c + 1)}
             />
 
             {phase === "leaving" && flying && (
