@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { CenterRectContext } from "@/context/CenterRectContext";
 
-const SPEED = 90;
+const SPEED = 55;
 
 type Obj = {
   id: string;
@@ -262,19 +262,15 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
               fontWeight: 700,
               fontSize: 28,
               letterSpacing: "-0.01em",
-              color: "#0A0A0A",
-              padding: "8px 12px",
+              color: isHovered ? "transparent" : "#0A0A0A",
+              WebkitTextStroke: isHovered ? "1.5px #0A0A0A" : "0px transparent",
+              padding: "16px 20px",
               transform: "translate3d(-9999px, -9999px, 0)",
               background: "transparent",
               border: 0,
               transformOrigin: "center",
-              transition: "scale 200ms ease-out, opacity 200ms ease-out",
-              scale: isHovered ? "1.08" : "1",
+              transition: "color 150ms ease-out, -webkit-text-stroke 150ms ease-out, opacity 200ms ease-out",
               opacity: isHidden ? 0 : 1,
-              textDecoration: isHovered ? "underline" : "none",
-              textDecorationThickness: "2px",
-              textDecorationColor: "#0A0A0A",
-              textUnderlineOffset: "6px",
             }}
           >
             {label}
