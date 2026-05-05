@@ -78,7 +78,6 @@ const Wordmark = forwardRef<HTMLElement, Props>(({ label, style, className, flas
             transition: transitionEnabled ? "background-color 5000ms ease-out" : "none",
           }}
         />
-        <p style={TAGLINE_STYLE}>More joy. Less everything else.</p>
       </h1>
     );
   }
