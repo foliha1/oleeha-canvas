@@ -146,7 +146,7 @@ const Stage = () => {
                   color: "#0A0A0A",
                   backgroundColor: "transparent",
                   padding: "16px 28px",
-                  border: "8px solid #0A0A0A",
+                  border: "4px solid #0A0A0A",
                   borderRadius: 9999,
                   boxSizing: "border-box",
                   transformOrigin: "center",
