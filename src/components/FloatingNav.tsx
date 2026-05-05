@@ -92,6 +92,17 @@ function segSegClosestPoints(
   };
 }
 
+function pointSegDist(px: number, py: number, ax: number, ay: number, bx: number, by: number) {
+  const abx = bx - ax;
+  const aby = by - ay;
+  const lenSq = abx * abx + aby * aby || 1;
+  let t = ((px - ax) * abx + (py - ay) * aby) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  const cx = ax + t * abx;
+  const cy = ay + t * aby;
+  return { cx, cy };
+}
+
 type Props = {
   items: { id: string; label: string }[];
   onItemClick: (id: string, rect: DOMRect) => void;
@@ -217,12 +228,37 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
           else if (insetB >= VH) { o.y = VH - o.h + LINK_INSET; o.vy = -Math.abs(o.vy); }
 
           if (centerRect) {
-            resolve(o, {
-              left: centerRect.left + WORDMARK_INSET,
-              top: centerRect.top + WORDMARK_INSET,
-              right: centerRect.right - WORDMARK_INSET,
-              bottom: centerRect.bottom - WORDMARK_INSET,
-            }, () => onCenterHitRef.current?.());
+            const wmCap = capsuleFromRect(
+              centerRect.left + WORDMARK_INSET,
+              centerRect.top + WORDMARK_INSET,
+              centerRect.right - WORDMARK_INSET,
+              centerRect.bottom - WORDMARK_INSET
+            );
+            const pillCap = capsuleFromRect(
+              o.x + LINK_INSET, o.y + LINK_INSET,
+              o.x + o.w - LINK_INSET, o.y + o.h - LINK_INSET
+            );
+            const cp = segSegClosestPoints(
+              pillCap.ax, pillCap.ay, pillCap.bx, pillCap.by,
+              wmCap.ax, wmCap.ay, wmCap.bx, wmCap.by
+            );
+            const ddx = cp.p1x - cp.p2x;
+            const ddy = cp.p1y - cp.p2y;
+            const dd = Math.hypot(ddx, ddy) || 1e-4;
+            const minD = pillCap.radius + wmCap.radius;
+            if (dd < minD) {
+              onCenterHitRef.current?.();
+              const nx = ddx / dd;
+              const ny = ddy / dd;
+              const overlap = minD - dd;
+              o.x += nx * overlap;
+              o.y += ny * overlap;
+              const vAlong = o.vx * nx + o.vy * ny;
+              if (vAlong < 0) {
+                o.vx -= 2 * vAlong * nx;
+                o.vy -= 2 * vAlong * ny;
+              }
+            }
           }
           if (hoveredRect && o.id !== hovered) {
             const capO = capsuleFromRect(
