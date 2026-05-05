@@ -50,6 +50,48 @@ const prefersReducedMotion = () =>
   typeof window !== "undefined" &&
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
+function capsuleFromRect(left: number, top: number, right: number, bottom: number) {
+  const h = bottom - top;
+  const radius = h / 2;
+  const cy = (top + bottom) / 2;
+  return {
+    ax: left + radius, ay: cy,
+    bx: right - radius, by: cy,
+    radius,
+  };
+}
+
+function segSegClosestPoints(
+  a1x: number, a1y: number, a2x: number, a2y: number,
+  b1x: number, b1y: number, b2x: number, b2y: number
+) {
+  const dax = a2x - a1x, day = a2y - a1y;
+  const dbx = b2x - b1x, dby = b2y - b1y;
+  const dx = a1x - b1x, dy = a1y - b1y;
+  const a = dax * dax + day * day;
+  const e = dbx * dbx + dby * dby;
+  const f = dbx * dx + dby * dy;
+  let s: number, t: number;
+  if (a <= 1e-8 && e <= 1e-8) { s = 0; t = 0; }
+  else if (a <= 1e-8) { s = 0; t = Math.max(0, Math.min(1, f / e)); }
+  else {
+    const c = dax * dx + day * dy;
+    if (e <= 1e-8) { t = 0; s = Math.max(0, Math.min(1, -c / a)); }
+    else {
+      const b = dax * dbx + day * dby;
+      const denom = a * e - b * b;
+      s = denom !== 0 ? Math.max(0, Math.min(1, (b * f - c * e) / denom)) : 0;
+      t = (b * s + f) / e;
+      if (t < 0) { t = 0; s = Math.max(0, Math.min(1, -c / a)); }
+      else if (t > 1) { t = 1; s = Math.max(0, Math.min(1, (b - c) / a)); }
+    }
+  }
+  return {
+    p1x: a1x + dax * s, p1y: a1y + day * s,
+    p2x: b1x + dbx * t, p2y: b1y + dby * t,
+  };
+}
+
 type Props = {
   items: { id: string; label: string }[];
   onItemClick: (id: string, rect: DOMRect) => void;
