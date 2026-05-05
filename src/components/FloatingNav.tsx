@@ -299,7 +299,7 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
               letterSpacing: "0em",
               textTransform: "uppercase",
               lineHeight: 1,
-              padding: "16px 28px",
+              padding: "12px 28px",
               borderRadius: 9999,
               border: "4px solid #0A0A0A",
               backgroundColor: isHovered ? "#0A0A0A" : "transparent",
