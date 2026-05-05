@@ -17,7 +17,7 @@ type FlyingItem = {
 };
 
 const Stage = () => {
-  const wordmarkRef = useRef<HTMLHeadingElement>(null);
+  const wordmarkRef = useRef<HTMLElement>(null);
   const flyingRef = useRef<HTMLDivElement>(null);
   const [path, setPath] = useState<string[]>(["root"]);
   const [flying, setFlying] = useState<FlyingItem | null>(null);
