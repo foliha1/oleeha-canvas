@@ -137,11 +137,18 @@ const Stage = () => {
                 ref={flyingRef}
                 className="pointer-events-none absolute left-0 top-0 font-display"
                 style={{
+                  fontFamily: '"PP Mueum", serif',
                   fontWeight: 700,
-                  fontSize: 28,
-                  letterSpacing: "-0.01em",
+                  fontSize: 22,
+                  letterSpacing: "0em",
+                  textTransform: "uppercase",
+                  lineHeight: 1,
                   color: "#0A0A0A",
-                  padding: "8px 12px",
+                  backgroundColor: "transparent",
+                  padding: "16px 28px",
+                  border: "8px solid #0A0A0A",
+                  borderRadius: 9999,
+                  boxSizing: "border-box",
                   transformOrigin: "center",
                   willChange: "transform, opacity",
                 }}
