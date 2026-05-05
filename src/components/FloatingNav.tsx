@@ -224,36 +224,66 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
               bottom: centerRect.bottom - WORDMARK_INSET,
             }, () => onCenterHitRef.current?.());
           }
-          if (hoveredRect && o.id !== hovered) resolve(o, hoveredRect);
+          if (hoveredRect && o.id !== hovered) {
+            const capO = capsuleFromRect(
+              o.x + LINK_INSET, o.y + LINK_INSET,
+              o.x + o.w - LINK_INSET, o.y + o.h - LINK_INSET
+            );
+            const capH = capsuleFromRect(
+              hoveredRect.left + LINK_INSET, hoveredRect.top + LINK_INSET,
+              hoveredRect.right - LINK_INSET, hoveredRect.bottom - LINK_INSET
+            );
+            const cp = segSegClosestPoints(
+              capO.ax, capO.ay, capO.bx, capO.by,
+              capH.ax, capH.ay, capH.bx, capH.by
+            );
+            const ddx = cp.p1x - cp.p2x;
+            const ddy = cp.p1y - cp.p2y;
+            const dd = Math.hypot(ddx, ddy) || 1e-4;
+            const minD = capO.radius + capH.radius;
+            if (dd < minD) {
+              const nx = ddx / dd;
+              const ny = ddy / dd;
+              const overlap = minD - dd;
+              o.x += nx * overlap;
+              o.y += ny * overlap;
+              const vAlong = o.vx * nx + o.vy * ny;
+              if (vAlong < 0) {
+                o.vx -= 2 * vAlong * nx;
+                o.vy -= 2 * vAlong * ny;
+              }
+            }
+          }
         }
         if (o.el) o.el.style.transform = `translate3d(${o.x}px, ${o.y}px, 0)`;
       }
 
-      // Elastic bounce between floating links (using inset collision rects)
+      // Elastic bounce between floating pills (capsule-vs-capsule)
       const objs = objectsRef.current;
       for (let i = 0; i < objs.length; i++) {
         for (let j = i + 1; j < objs.length; j++) {
           const a = objs[i];
           const b = objs[j];
-          const aL = a.x + LINK_INSET;
-          const aT = a.y + LINK_INSET;
-          const aR = a.x + a.w - LINK_INSET;
-          const aB = a.y + a.h - LINK_INSET;
-          const bL = b.x + LINK_INSET;
-          const bT = b.y + LINK_INSET;
-          const bR = b.x + b.w - LINK_INSET;
-          const bB = b.y + b.h - LINK_INSET;
-          if (aL >= bR || aR <= bL || aT >= bB || aB <= bT) continue;
+          const capA = capsuleFromRect(
+            a.x + LINK_INSET, a.y + LINK_INSET,
+            a.x + a.w - LINK_INSET, a.y + a.h - LINK_INSET
+          );
+          const capB = capsuleFromRect(
+            b.x + LINK_INSET, b.y + LINK_INSET,
+            b.x + b.w - LINK_INSET, b.y + b.h - LINK_INSET
+          );
+          const cp = segSegClosestPoints(
+            capA.ax, capA.ay, capA.bx, capA.by,
+            capB.ax, capB.ay, capB.bx, capB.by
+          );
+          const ddx = cp.p2x - cp.p1x;
+          const ddy = cp.p2y - cp.p1y;
+          const dist = Math.hypot(ddx, ddy) || 1e-4;
+          const minDist = capA.radius + capB.radius;
+          if (dist >= minDist) continue;
 
-          const acx = (aL + aR) / 2;
-          const acy = (aT + aB) / 2;
-          const bcx = (bL + bR) / 2;
-          const bcy = (bT + bB) / 2;
-          let nx = bcx - acx;
-          let ny = bcy - acy;
-          const dist = Math.hypot(nx, ny) || 0.0001;
-          nx /= dist;
-          ny /= dist;
+          const nx = ddx / dist;
+          const ny = ddy / dist;
 
           const aImmovable = isPaused || a.id === hovered;
           const bImmovable = isPaused || b.id === hovered;
@@ -264,13 +294,16 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
             if (!bImmovable) { b.vx -= relVel * nx; b.vy -= relVel * ny; }
           }
 
-          // Positional correction — push apart by half the overlap along n
-          const overlapX = Math.min(aR - bL, bR - aL);
-          const overlapY = Math.min(aB - bT, bB - aT);
-          const overlap = Math.min(overlapX, overlapY);
-          const half = overlap / 2;
-          if (!aImmovable) { a.x -= nx * half; a.y -= ny * half; }
-          if (!bImmovable) { b.x += nx * half; b.y += ny * half; }
+          const overlap = minDist - dist;
+          if (!aImmovable && !bImmovable) {
+            const half = overlap / 2;
+            a.x -= nx * half; a.y -= ny * half;
+            b.x += nx * half; b.y += ny * half;
+          } else if (!aImmovable) {
+            a.x -= nx * overlap; a.y -= ny * overlap;
+          } else if (!bImmovable) {
+            b.x += nx * overlap; b.y += ny * overlap;
+          }
         }
       }
 
