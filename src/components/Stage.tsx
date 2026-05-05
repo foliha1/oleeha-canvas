@@ -127,11 +127,11 @@ const Stage = () => {
               <p
                 className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2"
                 style={{
-                  transform: "translate(-50%, calc(50% + 24px))",
+                  transform: "translate(-50%, calc(50% + 80px))",
                   fontFamily: '"PP Montreal Text", system-ui, sans-serif',
                   fontWeight: 400,
                   fontStyle: "normal",
-                  fontSize: "clamp(14px, 1.4vw, 20px)",
+                  fontSize: "clamp(18px, 2vw, 32px)",
                   letterSpacing: "0em",
                   color: "#807F79",
                   margin: 0,
