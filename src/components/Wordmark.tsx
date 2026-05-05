@@ -21,6 +21,23 @@ const IMG_STYLE: CSSProperties = {
   fontSize: "clamp(48px, 9vw, 160px)",
   letterSpacing: "-0.03em",
   color: "#0A0A0A",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: "16px",
+};
+
+const TAGLINE_STYLE: CSSProperties = {
+  fontFamily: '"PP Montreal Text", system-ui, sans-serif',
+  fontWeight: 400,
+  fontStyle: "normal",
+  fontSize: "clamp(14px, 1.4vw, 20px)",
+  letterSpacing: "0em",
+  color: "#807F79",
+  margin: 0,
+  textAlign: "center",
+  lineHeight: 1.3,
+  whiteSpace: "nowrap",
 };
 
 const Wordmark = forwardRef<HTMLElement, Props>(({ label, style, className, flashSignal = 0 }, ref) => {
