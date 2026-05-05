@@ -291,20 +291,25 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
               const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
               onItemClick(id, rect);
             }}
-            className="absolute left-0 top-0 cursor-pointer font-display"
+            className="absolute left-0 top-0 font-display"
             style={{
+              fontFamily: '"PP Mueum", serif',
               fontWeight: 700,
-              fontSize: 28,
-              letterSpacing: "-0.01em",
-              color: isHovered ? "transparent" : "#0A0A0A",
-              WebkitTextStroke: isHovered ? "1.5px #0A0A0A" : "0px transparent",
-              padding: "16px 20px",
-              transform: "translate3d(-9999px, -9999px, 0)",
-              background: "transparent",
-              border: 0,
-              transformOrigin: "center",
-              transition: "color 150ms ease-out, -webkit-text-stroke 150ms ease-out, opacity 200ms ease-out",
+              fontSize: 22,
+              letterSpacing: "0em",
+              textTransform: "uppercase",
+              lineHeight: 1,
+              padding: "16px 28px",
+              borderRadius: 9999,
+              border: "8px solid #0A0A0A",
+              backgroundColor: isHovered ? "#0A0A0A" : "transparent",
+              color: isHovered ? "#EDEAE0" : "#0A0A0A",
+              boxSizing: "border-box",
+              transition: "background-color 150ms ease-out, color 150ms ease-out, opacity 200ms ease-out",
+              cursor: "pointer",
               opacity: isHidden ? 0 : 1,
+              transform: "translate3d(-9999px, -9999px, 0)",
+              transformOrigin: "center",
             }}
           >
             {label}
