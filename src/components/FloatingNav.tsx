@@ -105,7 +105,7 @@ function pointSegDist(px: number, py: number, ax: number, ay: number, bx: number
 
 type Props = {
   items: { id: string; label: string }[];
-  onItemClick: (id: string, rect: DOMRect) => void;
+  onItemClick: (id: string) => void;
   /** Item id currently flying to center — render as invisible placeholder. */
   hiddenId?: string | null;
   /** Opacity of the whole layer (used for enter/leave fades). */
