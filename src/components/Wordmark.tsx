@@ -23,7 +23,7 @@ const IMG_STYLE: CSSProperties = {
   color: "#0A0A0A",
 };
 
-const Wordmark = forwardRef<HTMLHeadingElement, Props>(({ label, style, className, flashSignal = 0 }, ref) => {
+const Wordmark = forwardRef<HTMLElement, Props>(({ label, style, className, flashSignal = 0 }, ref) => {
   const isRoot = label === "oleeha&co";
   const [color, setColor] = useState("#0A0A0A");
   const [transitionEnabled, setTransitionEnabled] = useState(false);
@@ -53,14 +53,14 @@ const Wordmark = forwardRef<HTMLHeadingElement, Props>(({ label, style, classNam
     }
   }, [isRoot]);
 
-  return (
-    <h1
-      ref={ref}
-      className={`font-display ${className ?? ""}`}
-      style={{ ...(isRoot ? IMG_STYLE : TEXT_STYLE), ...style }}
-    >
-      {isRoot ? (
+  if (isRoot) {
+    return (
+      <h1
+        className={`font-display ${className ?? ""}`}
+        style={{ ...IMG_STYLE, ...style }}
+      >
         <div
+          ref={ref as React.Ref<HTMLDivElement>}
           aria-label="oleeha & co"
           role="img"
           style={{
@@ -78,9 +78,17 @@ const Wordmark = forwardRef<HTMLHeadingElement, Props>(({ label, style, classNam
             transition: transitionEnabled ? "background-color 5000ms ease-out" : "none",
           }}
         />
-      ) : (
-        <span>{label}</span>
-      )}
+      </h1>
+    );
+  }
+
+  return (
+    <h1
+      ref={ref as React.Ref<HTMLHeadingElement>}
+      className={`font-display ${className ?? ""}`}
+      style={{ ...TEXT_STYLE, ...style }}
+    >
+      <span>{label}</span>
     </h1>
   );
 });
