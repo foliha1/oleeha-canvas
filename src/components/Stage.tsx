@@ -127,7 +127,7 @@ const Stage = () => {
               <p
                 className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2"
                 style={{
-                  transform: "translate(-50%, calc(50% + 80px))",
+                  transform: "translate(-50%, calc(50% + 60px))",
                   fontFamily: '"PP Montreal Text", system-ui, sans-serif',
                   fontWeight: 400,
                   fontStyle: "normal",
@@ -140,7 +140,7 @@ const Stage = () => {
                   whiteSpace: "nowrap",
                   opacity: phase === "leaving" ? 0 : 1,
                   transition: `opacity ${TRANSITION_MS}ms ease-in-out`,
-                  zIndex: 1,
+                  zIndex: 0,
                 }}
               >
                 More joy. Less everything else.
