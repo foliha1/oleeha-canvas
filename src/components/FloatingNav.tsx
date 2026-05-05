@@ -398,9 +398,8 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
             aria-label={`Open ${label}`}
             onPointerEnter={() => setHover(id)}
             onPointerLeave={() => { if (hoveredRef.current === id) setHover(null); }}
-            onClick={(e) => {
-              const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-              onItemClick(id, rect);
+            onClick={() => {
+              onItemClick(id);
             }}
             className="absolute left-0 top-0 font-display"
             style={{
