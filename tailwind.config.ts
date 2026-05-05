@@ -68,7 +68,8 @@ export default {
         pill: "9999px",
       },
       fontFamily: {
-        display: ['"Fraunces"', "serif"],
+        display: ['"PP Mueum"', "serif"],
+        body: ['"PP Montreal Text"', "system-ui", "sans-serif"],
       },
       fontWeight: {
         display: "900",

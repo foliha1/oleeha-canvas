@@ -1,3 +1,46 @@
+@font-face {
+  font-family: "PP Mueum";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/pp-mueum-bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "PP Mueum";
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/pp-mueum-bold-italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "PP Montreal Text";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/pp-montreal-text-regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "PP Montreal Text";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/pp-montreal-text-italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "PP Montreal Text";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/pp-montreal-text-bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "PP Montreal Text";
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/pp-montreal-text-bold-italic.woff2") format("woff2");
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -101,6 +144,7 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground font-display antialiased;
+    @apply bg-background text-foreground antialiased;
+    font-family: "PP Montreal Text", system-ui, sans-serif;
   }
 }
