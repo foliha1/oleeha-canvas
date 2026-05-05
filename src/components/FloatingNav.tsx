@@ -413,7 +413,7 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
               padding: "12px 28px",
               borderRadius: 9999,
               border: "4px solid #0A0A0A",
-              backgroundColor: isHovered ? "#0A0A0A" : "transparent",
+              backgroundColor: isHovered ? "#0A0A0A" : "#EDEAE0",
               color: isHovered ? "#EDEAE0" : "#0A0A0A",
               boxSizing: "border-box",
               transition: "background-color 150ms ease-out, color 150ms ease-out, opacity 200ms ease-out",

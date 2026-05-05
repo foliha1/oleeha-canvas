@@ -123,6 +123,30 @@ const Stage = () => {
               />
             </div>
 
+            {path.length === 1 && path[0] === "root" && (
+              <p
+                className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2"
+                style={{
+                  transform: "translate(-50%, calc(50% + 24px))",
+                  fontFamily: '"PP Montreal Text", system-ui, sans-serif',
+                  fontWeight: 400,
+                  fontStyle: "normal",
+                  fontSize: "clamp(14px, 1.4vw, 20px)",
+                  letterSpacing: "0em",
+                  color: "#807F79",
+                  margin: 0,
+                  textAlign: "center",
+                  lineHeight: 1.3,
+                  whiteSpace: "nowrap",
+                  opacity: phase === "leaving" ? 0 : 1,
+                  transition: `opacity ${TRANSITION_MS}ms ease-in-out`,
+                  zIndex: 1,
+                }}
+              >
+                More joy. Less everything else.
+              </p>
+            )}
+
             <FloatingNav
               key={navKey}
               items={items}
