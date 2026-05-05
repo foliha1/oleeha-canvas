@@ -92,6 +92,17 @@ function segSegClosestPoints(
   };
 }
 
+function pointSegDist(px: number, py: number, ax: number, ay: number, bx: number, by: number) {
+  const abx = bx - ax;
+  const aby = by - ay;
+  const lenSq = abx * abx + aby * aby || 1;
+  let t = ((px - ax) * abx + (py - ay) * aby) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  const cx = ax + t * abx;
+  const cy = ay + t * aby;
+  return { cx, cy };
+}
+
 type Props = {
   items: { id: string; label: string }[];
   onItemClick: (id: string, rect: DOMRect) => void;
