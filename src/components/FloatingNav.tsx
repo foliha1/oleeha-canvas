@@ -105,7 +105,7 @@ function pointSegDist(px: number, py: number, ax: number, ay: number, bx: number
 
 type Props = {
   items: { id: string; label: string }[];
-  onItemClick: (id: string, rect: DOMRect) => void;
+  onItemClick: (id: string) => void;
   /** Item id currently flying to center — render as invisible placeholder. */
   hiddenId?: string | null;
   /** Opacity of the whole layer (used for enter/leave fades). */
@@ -398,9 +398,8 @@ const FloatingNav = ({ items, onItemClick, hiddenId, opacity = 1, paused = false
             aria-label={`Open ${label}`}
             onPointerEnter={() => setHover(id)}
             onPointerLeave={() => { if (hoveredRef.current === id) setHover(null); }}
-            onClick={(e) => {
-              const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-              onItemClick(id, rect);
+            onClick={() => {
+              onItemClick(id);
             }}
             className="absolute left-0 top-0 font-display"
             style={{

@@ -8,21 +8,13 @@ import Wordmark from "./Wordmark";
 
 type Mode = "interactive" | "list";
 
-const TRANSITION_MS = 500;
-
-type FlyingItem = {
-  id: string;
-  label: string;
-  fromRect: DOMRect;
-};
+const TRANSITION_MS = 350;
 
 const Stage = () => {
   const wordmarkRef = useRef<HTMLElement>(null);
-  const flyingRef = useRef<HTMLDivElement>(null);
   const [path, setPath] = useState<string[]>(["root"]);
-  const [flying, setFlying] = useState<FlyingItem | null>(null);
   const [phase, setPhase] = useState<"idle" | "leaving" | "entering">("idle");
-  const [pendingPath, setPendingPath] = useState<string[] | null>(null);
+  const [nextPathState, setNextPathState] = useState<string[] | null>(null);
   const [hitCount, setHitCount] = useState(0);
   const [mode, setMode] = useState<Mode>(() =>
     typeof window !== "undefined" &&
@@ -44,36 +36,16 @@ const Stage = () => {
     return list;
   }, [currentId, parentId, currentNode.children]);
 
-  // Run "leaving" animation: fly clicked item to center, fade out floats, crossfade wordmark.
+  // Crossfade: after fade-out, swap path and switch to entering.
   useEffect(() => {
-    if (phase !== "leaving" || !flying || !pendingPath) return;
-    const el = flyingRef.current;
-    const wm = wordmarkRef.current;
-    if (!el || !wm) return;
-
-    const startRect = flying.fromRect;
-    const targetRect = wm.getBoundingClientRect();
-    const targetX = targetRect.left + targetRect.width / 2 - startRect.width / 2;
-    const targetY = targetRect.top + targetRect.height / 2 - startRect.height / 2;
-
-    el.style.transition = "none";
-    el.style.transform = `translate3d(${startRect.left}px, ${startRect.top}px, 0) scale(1)`;
-    el.style.opacity = "1";
-
-    requestAnimationFrame(() => {
-      el.style.transition = `transform ${TRANSITION_MS}ms ease-in-out, opacity ${TRANSITION_MS}ms ease-in-out`;
-      el.style.transform = `translate3d(${targetX}px, ${targetY}px, 0) scale(2)`;
-      el.style.opacity = "0";
-    });
-
+    if (phase !== "leaving" || !nextPathState) return;
     const t = window.setTimeout(() => {
-      setPath(pendingPath);
-      setPendingPath(null);
-      setFlying(null);
+      setPath(nextPathState);
+      setNextPathState(null);
       setPhase("entering");
     }, TRANSITION_MS);
     return () => window.clearTimeout(t);
-  }, [phase, flying, pendingPath]);
+  }, [phase, nextPathState]);
 
   // After committing new path, fade in then return to idle.
   useEffect(() => {
@@ -82,26 +54,18 @@ const Stage = () => {
     return () => window.clearTimeout(t);
   }, [phase]);
 
-  const handleClick = (id: string, rect: DOMRect) => {
+  const handleClick = (id: string) => {
     if (phase !== "idle") return;
     let nextPath: string[];
-    let label: string;
     if (id.startsWith("__parent__")) {
       nextPath = path.slice(0, -1);
-      label = NODES[nextPath[nextPath.length - 1]].label;
     } else {
       nextPath = [...path, id];
-      label = NODES[id].label;
     }
-    setFlying({ id, label, fromRect: rect });
-    setPendingPath(nextPath);
+    setNextPathState(nextPath);
     setPhase("leaving");
   };
 
-  const navOpacity = phase === "leaving" ? 0 : phase === "entering" ? 0 : 1;
-  // Force a fade-in by mounting "entering" with opacity 0 then bumping to 1 via key+effect.
-  // Simpler: use a key to remount FloatingNav on path change so it gets opacity 0→1 from initial transition.
-  // Remount on path or mode change so the floating layer gets a fresh layout.
   const navKey = `${mode}/${path.join("/")}`;
 
   return (
@@ -155,31 +119,6 @@ const Stage = () => {
               paused={phase !== "idle"}
               onCenterHit={() => setHitCount((c) => c + 1)}
             />
-
-            {phase === "leaving" && flying && (
-              <div
-                ref={flyingRef}
-                className="pointer-events-none absolute left-0 top-0 font-display"
-                style={{
-                  fontFamily: '"PP Mueum", serif',
-                  fontWeight: 700,
-                  fontSize: 22,
-                  letterSpacing: "0em",
-                  textTransform: "uppercase",
-                  lineHeight: 1,
-                  color: "#0A0A0A",
-                  backgroundColor: "transparent",
-                  padding: "16px 28px",
-                  border: "4px solid #0A0A0A",
-                  borderRadius: 9999,
-                  boxSizing: "border-box",
-                  transformOrigin: "center",
-                  willChange: "transform, opacity",
-                }}
-              >
-                {flying.label}
-              </div>
-            )}
           </>
         ) : (
           <ListView path={path} onNavigate={setPath} />
