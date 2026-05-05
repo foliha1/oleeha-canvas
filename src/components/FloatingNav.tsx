@@ -1,9 +1,9 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { CenterRectContext } from "@/context/CenterRectContext";
 
-const SPEED = 55;
-const LINK_INSET = 10;
-const WORDMARK_INSET = 14;
+const SPEED = 110;
+const LINK_INSET = -2;
+const WORDMARK_INSET = 0;
 
 type Obj = {
   id: string;
