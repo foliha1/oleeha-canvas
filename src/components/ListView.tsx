@@ -1,4 +1,4 @@
-import { NODES } from "@/data/nodes";
+import { NODES, ROOT_TEXT_LINKS } from "@/data/nodes";
 
 type Props = {
   path: string[];
@@ -78,6 +78,28 @@ const ListView = ({ path, onNavigate }: Props) => {
             </button>
           ))}
         </div>
+
+        {currentId === "root" && (
+          <div className="flex justify-center" style={{ gap: 24 }}>
+            {ROOT_TEXT_LINKS.map((id) => (
+              <button
+                key={id}
+                onClick={() => onNavigate([...path, id])}
+                className="cursor-pointer no-underline hover:underline"
+                style={{
+                  fontFamily: '"PP Montreal Text", sans-serif',
+                  fontSize: 16,
+                  color: "#0A0A0A",
+                  background: "transparent",
+                  border: 0,
+                  padding: 0,
+                }}
+              >
+                {NODES[id].label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,15 +1,14 @@
 export type NodeData = {
   label: string;
   children: string[];
+  href?: string;
 };
 
 export const NODES: Record<string, NodeData> = {
-  root: { label: "oleeha&co", children: ["projects", "say hey", "ideas", "about"] },
-  projects: { label: "projects", children: ["whoop!", "capclub", "atelier"] },
+  root: { label: "oleeha&co", children: ["whoop! whoop!"] },
+  "whoop! whoop!": { label: "whoop! whoop!", children: [], href: "https://whoop-whoop.com" },
   "say hey": { label: "say hey", children: [] },
-  ideas: { label: "ideas", children: [] },
   about: { label: "about", children: [] },
-  "whoop!": { label: "whoop!", children: [] },
-  capclub: { label: "capclub", children: [] },
-  atelier: { label: "atelier", children: [] },
 };
+
+export const ROOT_TEXT_LINKS = ["about", "say hey"];
