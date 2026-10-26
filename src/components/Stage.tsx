@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CenterRectContext } from "@/context/CenterRectContext";
-import { NODES } from "@/data/nodes";
+import { NODES, ROOT_TEXT_LINKS } from "@/data/nodes";
 import FloatingNav from "./FloatingNav";
 import ListView from "./ListView";
 import ViewToggle from "./ViewToggle";
@@ -55,6 +55,11 @@ const Stage = () => {
   }, [phase]);
 
   const handleClick = (id: string) => {
+    const href = NODES[id]?.href;
+    if (href) {
+      window.open(href, "_blank", "noopener,noreferrer");
+      return;
+    }
     if (phase !== "idle") return;
     let nextPath: string[];
     if (id.startsWith("__parent__")) {
@@ -64,6 +69,15 @@ const Stage = () => {
     }
     setNextPathState(nextPath);
     setPhase("leaving");
+  };
+
+  const handleListNavigate = (next: string[]) => {
+    const href = NODES[next[next.length - 1]]?.href;
+    if (href) {
+      window.open(href, "_blank", "noopener,noreferrer");
+      return;
+    }
+    setPath(next);
   };
 
   const navKey = `${mode}/${path.join("/")}`;
@@ -111,6 +125,37 @@ const Stage = () => {
               </p>
             )}
 
+            {path.length === 1 && path[0] === "root" && (
+              <div
+                className="absolute left-1/2 top-1/2 flex justify-center"
+                style={{
+                  transform: "translate(-50%, calc(50% + 120px))",
+                  gap: 24,
+                  opacity: phase === "leaving" ? 0 : 1,
+                  transition: `opacity ${TRANSITION_MS}ms ease-in-out`,
+                  zIndex: 0,
+                }}
+              >
+                {ROOT_TEXT_LINKS.map((id) => (
+                  <button
+                    key={id}
+                    onClick={() => handleClick(id)}
+                    className="cursor-pointer no-underline hover:underline"
+                    style={{
+                      fontFamily: '"PP Montreal Text", sans-serif',
+                      fontSize: 16,
+                      color: "#0A0A0A",
+                      background: "transparent",
+                      border: 0,
+                      padding: 0,
+                    }}
+                  >
+                    {NODES[id].label}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <FloatingNav
               key={navKey}
               items={items}
@@ -121,7 +166,7 @@ const Stage = () => {
             />
           </>
         ) : (
-          <ListView path={path} onNavigate={setPath} />
+          <ListView path={path} onNavigate={handleListNavigate} />
         )}
       </div>
     </CenterRectContext.Provider>
